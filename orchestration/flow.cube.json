@@ -1,12 +1,8 @@
 {
-  "flow_id": "cube-flow-v1",
-  "description": "Event-driven unit journey: receive, route to Prep or Pack, run Returns only after physical receipt, and run Recovery only when a fee event arrives.",
+  "flow_id": "cube-receiving-v1",
+  "description": "Receiving Manager only: one receipt invokes the eight-check DockProof adapter and records its evidence. Future agents can join through the shared agent contract and an explicitly extended flow.",
   "steps": [
-    { "stage": "receiving" },
-    { "when": { "route": ["fba"] }, "stage": "prep" },
-    { "when": { "route": ["mfn"] }, "stage": "pack" },
-    { "when": { "returned": [true] }, "stage": "returns" },
-    { "when": { "has_charge": [true] }, "stage": "recovery" }
+    { "stage": "receiving" }
   ],
   "defaults": {
     "timeout_s": 30,

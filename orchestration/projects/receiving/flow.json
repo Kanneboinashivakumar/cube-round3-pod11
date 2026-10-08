@@ -1,6 +1,6 @@
 {
   "flow_id": "receiving-manager-v1",
-  "description": "This contribution runs only the Receiving Manager. Add peer agents to a future flow after their owners integrate them through the shared contract.",
+  "description": "DockProof point-of-receipt inspection. One receipt invokes one Receiving Manager agent and stores its eight-check evidence result.",
   "steps": [
     { "stage": "receiving" }
   ],

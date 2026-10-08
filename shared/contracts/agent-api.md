@@ -1,6 +1,6 @@
 # Agent HTTP API (language-agnostic)
 
-Any agent, in any language, plugs in by serving two endpoints. Set `"mode": "http"` and `"url"` in `agents/<stage>/agent.json` (or env `<STAGE>_URL`, e.g. `PREP_URL`). Python agents get this for free: `make_app(stage, handle)` in `shared/utils/server.py`.
+Any agent, in any language, plugs in by serving two endpoints. Set `"mode": "http"` and `"url"` in `agents/<stage>/agent.json` (or env `<STAGE>_URL`, e.g. `PREP_URL`). Python agents get this for free: `make_app(stage, handle)` in `shared/utils/server.py`. The selected project's `project_id` is carried in `request.context.case` and namespaces workflow IDs.
 
 ## `GET /health`
 
@@ -32,6 +32,7 @@ Rules:
 5. **Consistent.** `output.verdict`, `status` and `agent_id` must equal the evidence's; `content_hash` must verify.
 6. **Time budget.** Respect `timeout_s` (default 30 s). Batch your model calls: one per unit carrying all checks.
 7. **No secrets in responses or logs.**
+8. **Cross-project record IDs.** Evidence IDs share one store. When an agent serves multiple projects, include the `project_id` in its record ID (for example `RCV-receiving-0001`) so two projects cannot collide while preserving idempotency.
 
 ## Quick check
 

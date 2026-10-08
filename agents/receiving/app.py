@@ -53,7 +53,7 @@ def _sample_observation(row: dict) -> dict:
         "units_per_carton": {"verdict": "pass" if row.get("units_per_carton_ordered") == row.get("units_per_carton_counted") else "fail",
                              "confidence": .86, "observed_units_per_carton": int(row.get("units_per_carton_counted") or 0),
                              "reason": "Synthetic sample CSV fixture; count was not visually confirmed."},
-        "variant": {"verdict": "fail" if any("wrong variant" in f for f in flags) else "pass",
+        "variant": {"verdict": "fail" if any(any(term in f for term in ("wrong variant", "wrong colour", "wrong color")) for f in flags) else "pass",
                     "confidence": .84, "observed_colour": row.get("spec_colour"), "observed_variant": row.get("spec_variant"),
                     "reason": "Synthetic sample CSV fixture; variant was not visually inspected."},
         "carton_damage": {"verdict": carton_damage, "confidence": .86 if carton_damage != "uncertain" else .4,
@@ -158,7 +158,13 @@ def handle(request: dict) -> dict:
         "UNCERTAIN" if any(c["verdict"] == "UNCERTAIN" for c in checks) else "PASS")
     outcome = {"PASS": "accept", "FAIL": "accept_with_exceptions", "UNCERTAIN": "pending_review"}[verdict]
     source = "Round 2 DockProof VLM" if photo_refs else "synthetic CSV adapter" if row else "unobserved receipt"
-    rid = row.get("record_id") if row else "RCV-" + hashlib.sha256(request["request_id"].encode()).hexdigest()[:12].upper()
+    if row:
+        source_id = str(row.get("record_id") or "")
+        suffix = source_id[4:] if source_id.startswith("RCV-") else source_id or hashlib.sha256(request["request_id"].encode()).hexdigest()[:12].upper()
+        project_id = str(case.get("project_id") or "")
+        rid = f"RCV-{project_id}-{suffix}" if project_id else f"RCV-{suffix}"
+    else:
+        rid = "RCV-" + hashlib.sha256(request["request_id"].encode()).hexdigest()[:12].upper()
     model = {"name": observation.get("metadata", {}).get("model_version", "dockproof-receiving"),
              "version": "round2-adapter-v1", "provider": "live-vlm" if photo_refs else "fixture-or-none",
              "calls": 1 if photo_refs else 0, "cost_usd": 0}
