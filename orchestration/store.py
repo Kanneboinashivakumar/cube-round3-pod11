@@ -48,6 +48,16 @@ class FileStore(MemoryStore):
         p = self.root / "workflows" / f"{workflow_id}.json"
         return json.loads(p.read_text()) if p.exists() else None
 
+    def list_workflows(self) -> list[dict]:
+        """Return the latest durable workflow snapshots, newest first."""
+        records = []
+        for path in (self.root / "workflows").glob("*.json"):
+            try:
+                records.append(json.loads(path.read_text()))
+            except (OSError, json.JSONDecodeError):
+                continue
+        return sorted(records, key=lambda wf: wf.get("timestamps", {}).get("updated_at", ""), reverse=True)
+
     def save_workflow(self, wf: dict) -> None:
         p = self.root / "workflows" / f"{wf['workflow_id']}.json"
         tmp = p.with_suffix(".tmp")

@@ -1,0 +1,13 @@
+{
+  "flow_id": "cube-receiving-v1",
+  "description": "Receiving Manager only: one receipt invokes the eight-check DockProof adapter and records its evidence. Future agents can join through the shared agent contract and an explicitly extended flow.",
+  "steps": [
+    { "stage": "receiving" }
+  ],
+  "defaults": {
+    "timeout_s": 30,
+    "retries": 1,
+    "on_uncertain": "continue",
+    "on_error": "continue"
+  }
+}

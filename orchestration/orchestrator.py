@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -57,14 +58,18 @@ def applies(step: dict, case: dict) -> tuple[bool, str]:
     return True, ""
 
 
-def discover_inputs(subject_id: str, stage: str) -> list[dict]:
+def discover_inputs(subject_id: str, stage: str, org_id: str | None = None) -> list[dict]:
     """Captures for one stage live in data/input/<subject_id>/<stage>/ (override the root with INPUT_DIR).
 
     Each file becomes a content-addressed input {ref, kind, sha256}. Refs are relative to the input root:
     never absolute (no local paths in evidence).
     """
     root = Path(os.environ.get("INPUT_DIR", ROOT / "data" / "input"))
-    folder = root / subject_id / stage
+    safe_subject = re.sub(r"[^A-Za-z0-9._-]", "-", subject_id)
+    safe_org = re.sub(r"[^A-Za-z0-9._-]", "-", org_id or "")
+    scoped_folder = root / safe_org / safe_subject / stage if safe_org else root / safe_subject / stage
+    # Keep compatibility with existing fixtures while new captures are tenant-scoped.
+    folder = scoped_folder if scoped_folder.is_dir() else root / safe_subject / stage
     if not folder.is_dir():
         return []
     return [{"ref": str(p.relative_to(root)), "kind": KINDS.get(p.suffix.lower(), "other"),
@@ -74,7 +79,9 @@ def discover_inputs(subject_id: str, stage: str) -> list[dict]:
 
 # ---------------------------------------------------------------- workflow state
 def workflow_id_for(case: dict) -> str:
-    return f"WF-{case['org_id']}-{case.get('subject_id') or case['unit_id']}"
+    project = case.get("project_id")
+    namespace = f"{project}-" if project else ""
+    return f"WF-{namespace}{case['org_id']}-{case.get('subject_id') or case['unit_id']}"
 
 
 def _log(wf: dict, event: str, stage: str | None = None, detail: str | None = None, **extra) -> None:
@@ -158,7 +165,7 @@ def _run_stage(wf: dict, sr: dict, idx: int, opts: dict, store, client) -> dict 
         "schema_version": "1.0", "request_id": base if sr["runs"] == 1 else f"{base}:r{sr['runs']}",
         "workflow_id": wf["workflow_id"], "stage": stage,
         "subject": {"org_id": wf["org_id"], "subject_id": wf["subject_id"], "route": wf["context"].get("route", "unknown")},
-        "inputs": discover_inputs(wf["subject_id"], stage),
+        "inputs": discover_inputs(wf["subject_id"], stage, wf["org_id"]),
         "previous_evidence": _previous_evidence(wf, idx, store),
         "context": {"overrides": wf["overrides"], "case": wf["context"]},
     }

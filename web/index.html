@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f6f4" />
+    <meta name="description" content="DockProof Receiving Manager — verify every arrival against its purchase order." />
+    <title>DockProof · Receiving Manager</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="DockProof Receiving Manager home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span>DockProof <b>Receiving</b></span>
+        </a>
+        <span class="top-divider"></span>
+        <div class="warehouse-picker" aria-label="Current workspace">
+          <span class="warehouse-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V6h16v14M8 10h3v3H8zm5 0h3v3h-3zm-5 5h3v3H8zm5 0h3v3h-3z"/></svg></span>
+          <span><small>WORKSPACE</small><strong>Receiving · Sample dataset</strong></span>
+          <span class="chevron" aria-hidden="true"></span>
+        </div>
+        <div class="top-spacer"></div>
+        <label class="search-box">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+          <input id="global-search" type="search" placeholder="Search PO, SKU, unit…" aria-label="Search receiving records" />
+          <kbd>⌘ K</kbd>
+        </label>
+        <span id="orchestrator-status" class="system-status"><i></i><span>Checking</span></span>
+      </header>
+
+      <aside class="sidebar" aria-label="Receiving navigation">
+        <div class="side-scroll">
+          <div class="nav-group">
+            <p class="nav-label">RECEIVING</p>
+            <button class="nav-item active" data-page="overview" aria-label="Overview" aria-current="page"><span class="nav-icon" data-icon="dashboard"></span>Overview</button>
+            <button class="nav-item" data-page="receipts" aria-label="Receipts"><span class="nav-icon" data-icon="inbound"></span>Receipts <span id="receipt-count" class="nav-count">0</span></button>
+            <button class="nav-item" data-page="shipments" aria-label="Shipments"><span class="nav-icon" data-icon="box"></span>Shipments</button>
+            <button class="nav-item" data-page="inspections" aria-label="Inspections"><span class="nav-icon" data-icon="check"></span>Inspections</button>
+            <button class="nav-item" data-page="review" aria-label="Review queue"><span class="nav-icon" data-icon="alert"></span>Review queue <span id="review-count" class="nav-count warn">0</span></button>
+            <button class="nav-item" data-page="evidence" aria-label="Evidence"><span class="nav-icon" data-icon="file"></span>Evidence</button>
+          </div>
+          <div class="nav-group">
+            <p class="nav-label">REFERENCE</p>
+            <button class="nav-item" data-page="catalog" aria-label="Product catalogue"><span class="nav-icon" data-icon="catalog"></span>Product catalogue</button>
+            <button class="nav-item" data-page="evaluation" aria-label="Quality lab"><span class="nav-icon" data-icon="chart"></span>Quality lab</button>
+          </div>
+          <div class="nav-group nav-admin">
+            <p class="nav-label">ADMIN</p>
+            <button class="nav-item" data-page="settings" aria-label="Settings"><span class="nav-icon" data-icon="settings"></span>Settings</button>
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <div class="system-health"><span class="health-pulse"></span><span><strong>Receiving orchestrator</strong><small id="health-caption">Loading status…</small></span></div>
+          <div class="version-row"><span>DockProof</span><span>RECEIVING · V1</span></div>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <div class="page-topline"><div class="breadcrumbs"><span>Receiving</span><span class="crumb-sep">/</span><strong id="crumb-current">Overview</strong></div><div class="updated-label"><span class="refresh-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7v5h-5M4.9 9a7.5 7.5 0 0 1 13-2L20 12m-.9 3a7.5 7.5 0 0 1-13 2L4 12m0 0H9"/></svg></span> Updated <span id="last-updated">just now</span></div></div>
+        <section id="page-content" aria-live="polite"></section>
+      </main>
+      <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    </div>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

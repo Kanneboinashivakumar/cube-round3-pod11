@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-08T17:08:07Z",
+  "title": "Design System: DockProof Receiving",
+  "extensions": {
+    "colorMeta": {
+      "canvas": { "role": "neutral", "displayName": "Soft Warehouse Canvas", "canonical": "#f5f6f4", "tonalRamp": ["#222421", "#444743", "#666a63", "#858a82", "#a5aaa2", "#c4c9c1", "#dfe3dc", "#f5f6f4"] },
+      "panel": { "role": "neutral", "displayName": "Paper Panel", "canonical": "#ffffff", "tonalRamp": ["#202020", "#414141", "#626262", "#828282", "#a3a3a3", "#c4c4c4", "#e5e5e5", "#ffffff"] },
+      "ink": { "role": "neutral", "displayName": "Near-Black Ink", "canonical": "#181a1b", "tonalRamp": ["#181a1b", "#303234", "#484a4c", "#626466", "#7c7e80", "#999b9d", "#b8babb", "#d8d9da"] },
+      "muted": { "role": "neutral", "displayName": "Utility Gray", "canonical": "#62696c", "tonalRamp": ["#25292a", "#3b4042", "#53595b", "#6d7375", "#888e90", "#a5aaab", "#c3c7c8", "#e2e4e4"] },
+      "quiet": { "role": "neutral", "displayName": "Utility Gray", "canonical": "#62696c", "tonalRamp": ["#25292a", "#3b4042", "#53595b", "#6d7375", "#888e90", "#a5aaab", "#c3c7c8", "#e2e4e4"] },
+      "line": { "role": "neutral", "displayName": "Divider Gray", "canonical": "#e1e4e2", "tonalRamp": ["#272a29", "#4b4e4d", "#717574", "#989c9a", "#b7bbb9", "#cdd1cf", "#d9dcda", "#e1e4e2"] },
+      "line-strong": { "role": "neutral", "displayName": "Strong Divider", "canonical": "#cdd2cf", "tonalRamp": ["#222624", "#454a47", "#696e6b", "#8d928f", "#a9aeab", "#bdc2bf", "#c7ccc9", "#cdd2cf"] },
+      "accent": { "role": "primary", "displayName": "Slate Navy", "canonical": "#4b556b", "tonalRamp": ["#171a21", "#252a36", "#343c4e", "#424b60", "#4b556b", "#778096", "#a5acbb", "#d4d7de"] },
+      "accent-strong": { "role": "primary", "displayName": "Deep Slate Navy", "canonical": "#354055", "tonalRamp": ["#11151c", "#1d2330", "#293243", "#354055", "#58647b", "#7d879a", "#a6adba", "#d0d3d9"] },
+      "accent-soft": { "role": "primary", "displayName": "Slate Tint", "canonical": "#eceef2", "tonalRamp": ["#181a1b", "#35383c", "#555a61", "#777d87", "#9ba1aa", "#bec2c9", "#d8dbe0", "#eceef2"] },
+      "green": { "role": "tertiary", "displayName": "Pass Green", "canonical": "#286b55", "tonalRamp": ["#0b2019", "#12392c", "#1b523e", "#226148", "#286b55", "#4c8b73", "#7ba996", "#bdd4ca"] },
+      "green-soft": { "role": "tertiary", "displayName": "Pass Green Tint", "canonical": "#eaf3ef", "tonalRamp": ["#12241c", "#2b4338", "#4b6258", "#6b8077", "#93a59d", "#bbc9c3", "#d6e0db", "#eaf3ef"] },
+      "amber": { "role": "secondary", "displayName": "Review Amber", "canonical": "#815512", "tonalRamp": ["#261808", "#432b0c", "#603f0f", "#704b10", "#815512", "#a77c39", "#c5a66f", "#e1d1b0"] },
+      "amber-soft": { "role": "secondary", "displayName": "Review Amber Tint", "canonical": "#f7f0df", "tonalRamp": ["#282218", "#494237", "#6b6254", "#8e8575", "#b0a895", "#cec6b5", "#e4dccb", "#f7f0df"] },
+      "red": { "role": "secondary", "displayName": "Exception Red", "canonical": "#a33f35", "tonalRamp": ["#2c100e", "#4d1c18", "#702922", "#8b352d", "#a33f35", "#bf685e", "#d8948c", "#ecc5c0"] },
+      "red-soft": { "role": "secondary", "displayName": "Exception Red Tint", "canonical": "#f7eae8", "tonalRamp": ["#2b1b19", "#4e3835", "#715653", "#957572", "#b69a97", "#d1bab7", "#e5d2d0", "#f7eae8"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Manrope Page Heading", "purpose": "Compact page titles and operational hierarchy." },
+      "title": { "displayName": "Manrope Panel Title", "purpose": "Panel and form section headings." },
+      "body": { "displayName": "DM Sans Body", "purpose": "Descriptions, fields, and dense product data." },
+      "field": { "displayName": "DM Sans Field", "purpose": "Form values and compact search input text." },
+      "action": { "displayName": "DM Sans Action", "purpose": "Compact button labels." },
+      "label": { "displayName": "DM Sans Label", "purpose": "Compact metadata, table headings, and statuses." }
+    },
+    "shadows": [
+      { "name": "panel-ambient", "value": "0 1px 2px rgb(19 25 24 / 5%)", "purpose": "Subtle separation beneath bordered white panels." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "150ms ease", "purpose": "Small hover, focus, and state changes." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "600px" },
+      { "name": "tablet", "value": "850px" },
+      { "name": "wide-tablet", "value": "1160px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main commit action such as recording or running a receipt.",
+      "html": "<button class=\"ds-btn-primary\">Record receipt</button>",
+      "css": ".ds-btn-primary{min-height:36px;padding:0 13px;border:1px solid transparent;border-radius:5px;background:#4b556b;color:#fff;font:700 12px 'DM Sans',sans-serif;cursor:pointer;transition:background 150ms ease}.ds-btn-primary:hover{background:#354055}.ds-btn-primary:focus-visible{outline:2px solid #4b556b;outline-offset:2px}.ds-btn-primary:disabled{opacity:.55;cursor:wait}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A lower-emphasis navigation or utility action.",
+      "html": "<button class=\"ds-btn-secondary\">View receipts</button>",
+      "css": ".ds-btn-secondary{min-height:36px;padding:0 13px;border:1px solid #cdd2cf;border-radius:4px;background:#fff;color:#303637;font:700 12px 'DM Sans',sans-serif;cursor:pointer;transition:background 150ms ease}.ds-btn-secondary:hover{background:#f6f7f5}.ds-btn-secondary:focus-visible{outline:2px solid #4b556b;outline-offset:2px}"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Compact receiving search field with a Slate Navy focus ring.",
+      "html": "<label class=\"ds-search\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"6.5\"></circle><path d=\"m16 16 4 4\"></path></svg><input aria-label=\"Search receiving records\" placeholder=\"Search PO, SKU, unit…\"></label>",
+      "css": ".ds-search{height:36px;display:flex;align-items:center;gap:9px;padding:0 10px;border:1px solid #e1e4e2;border-radius:6px;background:#fafbf9;color:#62696c}.ds-search svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7}.ds-search input{min-width:0;border:0;outline:0;background:transparent;color:#181a1b;font:12px 'DM Sans',sans-serif}.ds-search input::placeholder{color:#62696c}.ds-search:focus-within{border-color:#4b556b;box-shadow:0 0 0 2px rgb(75 85 107 / 18%)}"
+    },
+    {
+      "name": "Selected Navigation Item",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Current receiving destination in the sidebar or compact mobile rail.",
+      "html": "<button class=\"ds-nav-item\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"8\" height=\"8\" rx=\"1\"></rect><rect x=\"13\" y=\"3\" width=\"8\" height=\"5\" rx=\"1\"></rect><rect x=\"13\" y=\"10\" width=\"8\" height=\"11\" rx=\"1\"></rect><rect x=\"3\" y=\"13\" width=\"8\" height=\"8\" rx=\"1\"></rect></svg>Overview</button>",
+      "css": ".ds-nav-item{min-height:36px;display:flex;align-items:center;gap:11px;padding:0 10px;border:0;border-radius:5px;background:#eeefed;color:#17191a;font:700 12px 'DM Sans',sans-serif;text-align:left;cursor:pointer}.ds-nav-item svg{width:16px;height:16px;fill:none;stroke:#4b556b;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}.ds-nav-item:hover{background:#f2f3f1}.ds-nav-item:focus-visible{outline:2px solid #4b556b;outline-offset:2px}"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "status-pass",
+      "description": "Compact semantic decision tag; amber and red are parallel verdict variants.",
+      "html": "<span class=\"ds-status\">Pass</span>",
+      "css": ".ds-status{min-height:22px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;background:#eaf3ef;color:#245d49;font:800 11px/1.2 'DM Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase}"
+    },
+    {
+      "name": "Operational Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "White, bordered panel used for ledger, checklist, and configuration content.",
+      "html": "<section class=\"ds-panel\"><h2>Recent receipts</h2><p>Incoming product records and decisions.</p></section>",
+      "css": ".ds-panel{padding:16px;border:1px solid #e1e4e2;border-radius:7px;background:#fff;color:#181a1b;box-shadow:0 1px 2px rgb(19 25 24 / 5%);font:13px/1.45 'DM Sans',sans-serif}.ds-panel h2{margin:0;font:700 14px/1.3 Manrope,sans-serif}.ds-panel p{margin:4px 0 0;color:#62696c}.ds-panel:focus-within{outline:2px solid #4b556b;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Receiving Status Board",
+    "overview": "The supplied warehouse dashboard is the visual anchor: a compact WMS frame, legible operational totals, a high-utility left rail, and a table that keeps current work visible. DockProof carries that familiar operating rhythm into the receiving task, where the object of attention is an auditable shipment decision rather than a general warehouse KPI.\n\nThe surface is restrained and evidence-first. Neutral panels and fine rules preserve scanability; muted navy marks primary actions and selected navigation; green, amber, and red communicate pass, uncertainty, and exception.",
+    "keyCharacteristics": ["Familiar warehouse navigation and dense, scannable ledger.", "A quiet neutral frame with semantic color reserved for decisions.", "Clear hierarchy for operational states and decision context."],
+    "rules": [
+      { "name": "The Meaningful Color Rule", "body": "Use green, amber, and red only to communicate pass, uncertainty, and exception; do not use them as decoration.", "section": "colors" },
+      { "name": "The Quiet Surface Rule", "body": "Prefer a clear border or tonal change; keep shadows subtle and rare.", "section": "elevation" }
+    ],
+    "dos": ["Do preserve the compact WMS frame and its clear separation between navigation, work area, and supporting panels.", "Do use semantic color to clarify decision states while keeping neutral structure dominant.", "Do contain wide table overflow inside its own region."],
+    "donts": ["Don't use semantic colors as decoration or add thick accent borders to rounded panels.", "Don't hide wide table columns by clipping the page; keep overflow within the table region."]
+  }
+}

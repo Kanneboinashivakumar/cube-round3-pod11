@@ -1,44 +1,32 @@
-# agents/receiving/  ·  Receiving Manager
+# DockProof Receiving Manager · Round 3 adapter
 
-**Owner:** Member 1 (Receiving Manager)  (set `owner` in `agent.json` and the handle in `.github/CODEOWNERS`)
+**Owner:** [@chapalaumesh209](https://github.com/chapalaumesh209)
 
-> **This folder currently contains an organiser stub** that replays the synthetic Round 2 CSV. It is *not* an agent. Replace it, then replace this README with one that describes what you actually built, how to run it, and its limits.
+**Round 2 source:** [cube26-rcv-0068-chapalaumesh209](https://github.com/chapalaumesh209/cube26-rcv-0068-chapalaumesh209)
 
-| | |
-|---|---|
-| **Reads (inputs)** | Photos at the point of receipt (pallet, carton, unit) and the PO line |
-| **Reads (previous evidence)** | nothing: first in the chain |
-| **Produces** | identity, quantity, carton count, damage and quality verdicts |
-| **Recommended `check_key`s** | `identity_match, carton_count, quantity, carton_damage, unit_damage, quality_flags` |
-| **`decision.outcome` values** | `accept, accept_with_exceptions, reject, pending_review` |
+This adapter brings the Round 2 DockProof Receiving Manager into the Pod's Agent Input / Agent Output contract. It preserves the eight-check inspection: identity, quantity, cartons, units per carton, variant, carton damage, unit damage, and expected components. The orchestrator still owns workflow state and records this agent's sealed evidence with its downstream context.
 
-Your evidence is where supplier disputes begin and the only point at which a supplier claim is still possible. **Keep supplier-side shortfall (finding F-10) distinct from channel-side loss.** Set `subject.unit_scope` honestly: Round 2 Receiving rows are PO lines (finding F-08).
+## Evidence and model behavior
 
-## Where your code goes
+- A live observation uses one multimodal request for all available receipt images. Configure either Gemini or OpenRouter as described in the repository `.env.example`.
+- The default is offline/mock mode. Known organiser rows are explicitly identified as synthetic CSV fixtures, not photo inspections.
+- A new receipt with no known fixture and no live vision returns UNCERTAIN checks. A missing PO expectation also makes its related check UNCERTAIN.
+- A provider, timeout, image, or structured-output error creates a pending/error UNCERTAIN evidence record. It never turns into PASS or a hidden mock fallback.
+- Uploaded captures are stored beneath an organization- and unit-scoped `data/input/` path; evidence stores relative references and hashes, not client-provided filesystem paths.
+- Receiving scope is `po_line`, keeping a supplier-side shortfall distinct from a channel-side unit loss (Round 3 finding F-10).
 
-```text
-agents/receiving/
-├── app.py          ← expose  handle(agent_input: dict) -> dict  (an Agent Output). Keep `app = make_app(...)` to serve over HTTP.
-├── agent.json      ← stage · agent_id · owner · mode (inproc | http) · url · an honest `implementation` description
-├── PROVENANCE.md   ← your Round 2 repo URL + commit this came from (create it)
-├── README.md       ← this file, rewritten
-└── …               ← your Round 2 code, prompts, rules, fixtures
-```
+## Run
 
-## Integrating, in order
-
-1. Read [`INTEGRATION-GUIDE.md`](../../INTEGRATION-GUIDE.md) and [`EVIDENCE-CONTRACT.md`](../../EVIDENCE-CONTRACT.md); open [`examples/end-to-end/`](../../examples/) for a real Agent Output.
-2. In `handle()`: read `request["subject"]`, `request["inputs"]` (your captures) and `request["previous_evidence"]`; run your agent (**one batched model call per unit**); build the record with `shared.utils.records.build_record()` and wrap it with `build_output()`.
-3. **Fail open.** On a model error return `pending_output(...)`, not an exception. Never invent evidence: if you did not see it, say UNCERTAIN with an `uncertain_reason`.
-4. **Refuse other tenants.** Raise `LookupError` (HTTP 404) for a subject that is not under `subject.org_id`.
-5. Make it idempotent: the same `request_id` must yield the same `record_id`. Use the **latest override** of previous evidence (`context.overrides`).
-6. Run `pytest tests/integration/test_agent_contracts.py`, first on the stub (it passes), then on yours, **with your own fixtures**.
-7. Run the whole system: `make run` and `make test`.
-
-## Run on its own
+Run the integrated app from the repository root:
 
 ```sh
-.venv/bin/uvicorn agents.receiving.app:app --port 8101
-curl localhost:8101/health
+make setup
+make serve
+# Open http://localhost:8100 and choose Receiving or Business events.
 ```
-Then set `"mode": "http"` in `agent.json` if you want the orchestrator to call it over HTTP.
+
+For live image inspection, set `VLM_MODE=live` and either `GEMINI_API_KEY` (optionally `GEMINI_MODEL`) or `OPENROUTER_API_KEY` (optionally `OPENROUTER_MODEL`). Keep keys only in an ignored `.env`; never commit them.
+
+## Limits
+
+The receiving bridge is implemented in Python to speak the Pod contract; the Round 2 Next.js app remains the source of its inspection rules and prompts. This branch does not copy the old app's auth/database/UI into the pod. Live visual analysis requires operator-entered PO expectations and actual images. The demo's file-backed workflow store is local and has no authentication; do not expose it publicly before adding identity, tenancy enforcement at the API boundary, and shared durable storage.

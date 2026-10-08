@@ -1,10 +1,10 @@
 {
   "stage": "receiving",
-  "agent_id": "receiving-stub@0",
-  "owner": "@github-handle-of-the-owner",
+  "agent_id": "dockproof-receiving@1",
+  "owner": "@chapalaumesh209",
   "mode": "inproc",
   "url": "http://localhost:8101",
   "module": "agents.receiving.app",
-  "implementation": "organiser-stub",
-  "notes": "Set mode to \"http\" if your agent is not Python or runs as its own service. Change implementation to a short honest description of what you built."
+  "implementation": "Round 2 DockProof eight-check receiving adapter with optional live Gemini/OpenRouter vision; synthetic CSV fixtures are labelled and never treated as photo analysis.",
+  "notes": "In-process adapter for the shared orchestrator. Live vision requires VLM_MODE=live and a provider API key."
 }

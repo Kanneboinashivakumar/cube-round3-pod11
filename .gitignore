@@ -10,3 +10,6 @@ venv/
 out/
 .pytest_cache/
 *.egg-info/
+.impeccable/questions/
+.impeccable/review/
+.impeccable/receiving-direction.json
