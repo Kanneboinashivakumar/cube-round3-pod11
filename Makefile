@@ -16,8 +16,8 @@ run:              ## run every sample workflow; state -> out/workflows/*.json, e
 case:             ## one workflow, full JSON:  make case UNIT=UNIT-0014 ORG=org_demo_alpha
 	@.venv/bin/python -m orchestration.run --unit $(UNIT) --org $(ORG)
 
-serve:            ## orchestrator API on :8100  (POST /workflows, GET /workflows/{id}, GET /health)
-	.venv/bin/uvicorn orchestration.api:app --port 8100
+serve:            ## integrated operations dashboard + orchestrator API on :8100
+	set -a; test ! -f .env || . ./.env; set +a; .venv/bin/uvicorn orchestration.api:app --port 8100
 
 health:           ## health of the orchestrator and every agent
 	curl -s localhost:8100/health | python3 -m json.tool

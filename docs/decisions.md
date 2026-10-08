@@ -77,3 +77,19 @@ A contradiction between documents or data is a **finding**, not a failure. Open 
 ## Your Pod's decisions
 
 _Add entries below._
+
+### D-007 · Events advance a unit passport over time
+- Date / Owner: 2026-10-08 / @chapalaumesh209
+- Context: the supplied CUBE FLOW idea specifies that receiving, routing, physical return, and fee arrival happen at different times; running every eligible stage at receipt would invent future events.
+- Options considered: change the starter's default flow; create a separate event-driven flow; move to an external queue.
+- Decision: keep `flow.json` and its compatibility API intact, and add `flow.cube.json` plus `POST /events`. Product receipt starts Receiving; a route event activates only Prep or Pack; physical return activates Returns; a charge event activates Recovery.
+- Why: preserves pod tests and existing consumers while matching the lifecycle design and keeping the orchestrator as the state owner.
+- Consequences: event state uses the existing local FileStore and is not safe for public multi-instance use. A future queue/database can replace that boundary without changing agent contracts.
+
+### D-008 · One FastAPI-served operations UI
+- Date / Owner: 2026-10-08 / @chapalaumesh209
+- Context: the target repo is Python/FastAPI with no frontend; the provided WMS dashboard is the shared visual reference.
+- Options considered: serve static HTML/CSS/JS from the API; add a separately deployed React application.
+- Decision: add a responsive static dashboard served from the same FastAPI process.
+- Why: one setup and launch path for the pod demo, with no competing workflow state or frontend/backend deployment split.
+- Consequences: the current API remains unauthenticated and uses local JSON state; secure those boundaries before external deployment.

@@ -109,6 +109,10 @@ The questions that are yours to answer (and to write down): Should a Receiving s
 - Any key can be set per step. The step order is the order of execution. Need parallel stages, a re-check loop, or a different order? Change `advance()` and write a decision.
 - **Specialist Pods** use [`flow.specialist.json`](orchestration/flow.specialist.json) (no Prep). `pod.json` selects the flow.
 
+### Event-driven CUBE FLOW entry point
+
+The dashboard uses `POST /events` with `orchestration/flow.cube.json`; the compatibility workflow and CLI continue using the flow selected by `pod.json`. The event flow gates Recovery on `has_charge: true` as well as routing Returns on physical receipt. `UNIT_CREATED` creates a draft passport; `PRODUCT_RECEIVED` activates Receiving; `FULFILMENT_ROUTE_IDENTIFIED` activates only Prep or Pack; `RETURN_INITIATED` is recorded without inspection; `RETURN_RECEIVED` activates Returns; and `CHARGE_RECEIVED` activates Recovery. Event IDs are stored in context, so replaying the same event returns the current passport without rewriting evidence. A future production message queue can replace this HTTP event front door while preserving the state transition rules.
+
 ## 8. How each situation is handled
 
 | Agent outcome | Orchestrator behaviour |

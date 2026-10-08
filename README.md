@@ -4,7 +4,7 @@
 
 > Five agents, one unit, one record that follows it. In Round 3 your Pod connects the five Round 2 agents into **one commerce system**.
 
-**New here? Read [`START-HERE.md`](START-HERE.md) first.** This README is the concise overview; the detailed rules live in the guides.
+**New here? Read [`START-HERE.md`](START-HERE.md) first.** This README is the concise overview; the detailed rules live in the guides. The Round 3 dashboard and event-driven integration are documented in [`PRODUCT.md`](PRODUCT.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ## Objective
 
@@ -51,10 +51,12 @@ make setup            # venv + dependencies + .env
 make test             # integration, end-to-end, failure, UNCERTAIN, override and HTTP tests
 make run              # all sample workflows end to end -> out/workflows/*.json and out/evidence/*.json
 make case UNIT=UNIT-0014 ORG=org_demo_alpha     # one workflow, in full
-make serve            # orchestrator API on :8100 (POST /workflows, GET /workflows/{id}, GET /health)
+make serve            # API + shared operations dashboard at http://localhost:8100
 ```
 
-Out of the box everything runs on **organiser stub agents** replaying the synthetic Round 2 CSVs. **Replacing a stub with your real agent is your job.**
+The dashboard is served by FastAPI and provides a WMS-style operations home, passport and evidence views, agent health, and event intake. The Receiving Manager adapter in `agents/receiving/` carries the Round 2 DockProof eight-check inspection into the shared contract, with optional Gemini/OpenRouter photo analysis. Its offline CSV rows remain clearly labelled synthetic fixtures. Prep, Pack, Returns and Recovery remain the pod's supplied in-process agents until their owners complete their Round 2 integrations.
+
+The event-driven API uses `orchestration/flow.cube.json`: a unit can get a passport before arrival, product receipt starts Receiving, route identification selects Prep or Pack, a return request is recorded without inspection, physical return starts Returns, and a charge starts Recovery. The starter `flow.json` and its existing endpoints remain available for compatibility.
 
 Run an agent as its own service:
 
@@ -81,9 +83,10 @@ Copy `.env.example` to `.env`. **Never commit `.env`.**
 | `ORCH_FLOW` | Flow file for the API | the flow in `pod.json` |
 | `<STAGE>_URL` | Where an `http`-mode agent listens (`PREP_URL`, …) | `agent.json` `url` |
 | `OUT_DIR` | Where workflow state and evidence are written | `out` |
-| `DATA_DIR`, `INPUT_DIR` | Sample CSVs for the stubs; your per-stage captures | `data/sample`, `data/input` |
+| `DATA_DIR`, `INPUT_DIR` | Sample CSVs for fixtures; tenant/unit-scoped per-stage captures | `data/sample`, `data/input` |
 | `LOG_LEVEL`, `LOG_FORMAT` | Logging | `WARNING`, `json` |
-| Model provider keys | Whatever *your* agents use (e.g. `ANTHROPIC_API_KEY`) | none |
+| `VLM_MODE`, `VLM_PROVIDER` | DockProof Receiving mock/live selector and optional Gemini/OpenRouter provider | `mock`, inferred |
+| `GEMINI_API_KEY`, `OPENROUTER_API_KEY` | Live DockProof image inspection credentials | none |
 
 ## Example end-to-end workflow
 

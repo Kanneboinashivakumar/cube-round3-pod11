@@ -128,3 +128,62 @@ _Delete this note and describe **your** system. At minimum:_
 6. **Failure model**: what you break in the demo and what happens.
 7. **Deployment**: where it runs, how to reach it, how to start it.
 8. **Known limits.**
+# CUBE FLOW Round 3 contribution
+
+This section describes the WMS-style shared dashboard, unit-event lifecycle, and DockProof Receiving adapter added on the `umesh` contribution branch. The original pod architecture below remains the authority for the shared agent contract and all other pod members' implementations.
+
+## Shared operations architecture
+
+```mermaid
+flowchart LR
+  U[Warehouse operator / reviewer] --> UI[FastAPI-served WMS dashboard]
+  UI --> EV[Business event API]
+  EV --> ORCH[Orchestrator · sole workflow-state owner]
+  ORCH --> RCV[DockProof Receiving adapter]
+  ORCH --> ROUTE{Fulfilment route}
+  ROUTE -->|FBA| PREP[Prep agent]
+  ROUTE -->|MFN| PACK[Pack agent]
+  EV -->|Physical return received| RET[Returns agent]
+  EV -->|Charge received| REC[Recovery agent]
+  RCV --> E[Validated, immutable evidence]
+  PREP --> E
+  PACK --> E
+  RET --> E
+  REC --> E
+  E --> FS[(FileStore · out/workflows + out/evidence)]
+  FS --> UI
+  RCV -. optional live photo call .-> VLM[Gemini or OpenRouter]
+```
+
+The one-process local demo serves the frontend and APIs from `orchestration.api:app`. The static UI is in `web/`; it uses the same workflow/evidence endpoints as integrations and does not own business state. `FileStore` remains the persistence boundary, so this shape is suitable for the local demo, not a multi-instance production deployment.
+
+## Unit lifecycle and event data flow
+
+The dashboard posts events to `POST /events`. A first `PRODUCT_RECEIVED` event creates `WF-<org>-<unit>`, stores the PO expectation in workflow context, persists image captures under a tenant/unit-scoped `data/input/` directory, and invokes Receiving. The receiving agent returns eight checks plus expected/observed values, confidence, source references, and a sealed evidence record.
+
+Later events update that same passport:
+
+| Event | Orchestrator action |
+| --- | --- |
+| `UNIT_CREATED` | Create a PENDING unit passport without running an agent. |
+| `PRODUCT_RECEIVED` | Run Receiving; run Prep/Pack only when a route is known. Also creates a passport if no earlier creation event exists. |
+| `FULFILMENT_ROUTE_IDENTIFIED` | Activate Prep for FBA or Pack for MFN; the other route stays skipped. The route cannot be changed after its specialist has completed. |
+| `RETURN_INITIATED` | Record the return request; no physical inspection runs. |
+| `RETURN_RECEIVED` | Mark returned and activate Returns. A return-initiation alone does not activate inspection. |
+| `CHARGE_RECEIVED` | Attach fee context and activate Recovery with all prior evidence. |
+
+`event_id` values are saved to the passport so repeating the same business event is idempotent. A new route/return/charge event reopens only its previously skipped stage. Completed stages are not silently rerun, and evidence history is never removed. If required facts or photos are missing, Receiving reports `UNCERTAIN`; the event does not manufacture evidence.
+
+## Receiving integration and model use
+
+`agents/receiving/app.py` adapts the Round 2 DockProof eight-check policy to the Round 3 Agent Input / Output schema. `agents/receiving/vlm.py` accepts the same expected PO state and multiple receipt photos in one request. With `VLM_MODE=live`, it sends a structured prompt to Gemini or OpenRouter using server-side credentials, validates the eight verdicts and confidence values, and returns the observation for the shared evidence builder. It never falls back from a failed live call to a synthetic PASS. Without a live call, known organiser rows are explicitly labelled `synthetic-csv-fixture`; an unobserved receipt remains uncertain.
+
+The other four agent folders are supplied pod agents and remain in-process until their respective owners replace their stubs. This contribution does not overwrite their work.
+
+## UI direction
+
+The dashboard follows the attached WMS reference: narrow warehouse navigation, top-level location/search controls, compact operational metrics, a passport work queue, event intake, agent health, and lifecycle activity. The UI is responsive and exposes Overview, Unit Passports, Exceptions, Agent Mesh, Evidence Ledger, Receiving, and Business Events views. It is intentionally a vanilla HTML/CSS/JS client served by FastAPI so the repo keeps a single local launch command and deployment surface.
+
+## Deployment and security boundary
+
+`make serve` starts the API and UI on port 8100. The current API has no authentication and the local JSON store has no cross-process locking or shared durability. Photo uploads are limited to JPEG, PNG, or WebP, capped at 8 MB each and 12 per receipt, tenant-scoped in local paths, content-hashed, and referenced relatively in evidence. Before public deployment, add authentication and authorization to every API route, durable shared workflow/evidence storage, concurrency controls, retention policy, and secure object storage for images.

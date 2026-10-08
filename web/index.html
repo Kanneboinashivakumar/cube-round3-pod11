@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f6f8" />
+    <title>CUBE FLOW · Operations</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="CUBE FLOW home">
+          <span class="brand-mark"><i></i><i></i><i></i><i></i></span>
+          <span>CUBE <b>FLOW</b></span>
+        </a>
+        <div class="top-divider"></div>
+        <button class="warehouse-picker" type="button" aria-label="Selected warehouse">
+          <span class="warehouse-icon">⌂</span>
+          <span><small>WAREHOUSE</small><strong>San Jose Main Warehouse</strong></span>
+          <span class="chevron">⌄</span>
+        </button>
+        <div class="top-spacer"></div>
+        <label class="search-box">
+          <span class="search-icon">⌕</span>
+          <input id="global-search" type="search" placeholder="Search unit, PO, or workflow…" aria-label="Search workflows" />
+          <kbd>⌘ K</kbd>
+        </label>
+        <button class="icon-button" aria-label="Notifications" title="Notifications"><span class="bell-icon">♧</span><i class="notification-dot"></i></button>
+        <button class="icon-button theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">◐</button>
+        <button class="profile" aria-label="Signed in as Umesh">U</button>
+      </header>
+
+      <aside class="sidebar" aria-label="Primary navigation">
+        <div class="side-scroll">
+          <div class="nav-group">
+            <p class="nav-label">WORKSPACE</p>
+            <button class="nav-item active" data-page="overview"><span class="nav-icon">▦</span>Operations dashboard</button>
+            <button class="nav-item" data-page="workflows"><span class="nav-icon">☷</span>Unit passports <span id="workflow-count" class="nav-count">0</span></button>
+            <button class="nav-item" data-page="exceptions"><span class="nav-icon">△</span>Exceptions <span id="exception-count" class="nav-count warn">0</span></button>
+          </div>
+          <div class="nav-group">
+            <p class="nav-label">AGENT NETWORK</p>
+            <button class="nav-item" data-page="agents"><span class="nav-icon">⎔</span>Agent mesh <span class="live-dot"></span></button>
+            <button class="nav-item" data-page="evidence"><span class="nav-icon">▤</span>Evidence ledger</button>
+          </div>
+          <div class="nav-group">
+            <p class="nav-label">OPERATIONS</p>
+            <button class="nav-item" data-page="receiving"><span class="nav-icon">⇩</span>Receiving</button>
+            <button class="nav-item" data-page="events"><span class="nav-icon">⌁</span>Business events</button>
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <div class="system-health"><span class="health-pulse"></span><span><strong>Orchestrator online</strong><small id="health-caption">Checking agents…</small></span></div>
+          <div class="version-row"><span>Cube Flow</span><span>ROUND 3 · POD 11</span></div>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <div class="page-topline"><div class="breadcrumbs"><span>Operations</span><span class="crumb-sep">/</span><strong id="crumb-current">Dashboard</strong></div><div class="updated-label"><span class="refresh-mark">⟳</span> Updated <span id="last-updated">just now</span></div></div>
+        <section id="page-content" aria-live="polite"></section>
+      </main>
+      <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    </div>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

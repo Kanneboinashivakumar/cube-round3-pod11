@@ -1,0 +1,17 @@
+{
+  "flow_id": "cube-flow-v1",
+  "description": "Event-driven unit journey: receive, route to Prep or Pack, run Returns only after physical receipt, and run Recovery only when a fee event arrives.",
+  "steps": [
+    { "stage": "receiving" },
+    { "when": { "route": ["fba"] }, "stage": "prep" },
+    { "when": { "route": ["mfn"] }, "stage": "pack" },
+    { "when": { "returned": [true] }, "stage": "returns" },
+    { "when": { "has_charge": [true] }, "stage": "recovery" }
+  ],
+  "defaults": {
+    "timeout_s": 30,
+    "retries": 1,
+    "on_uncertain": "continue",
+    "on_error": "continue"
+  }
+}
