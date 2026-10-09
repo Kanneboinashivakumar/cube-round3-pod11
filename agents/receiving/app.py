@@ -122,7 +122,7 @@ def _build_checks(observation: dict, expected: dict, row: dict | None, photo_ref
             reason = "The purchase-order expectation for this check was not supplied."
         checks.append(check(key, verdict, confidence if isinstance(confidence, (int, float)) else None,
                             expected=exp, observed=observed, detail=reason, evidence_refs=photo_refs,
-                            uncertain_reason="missing_visual_evidence" if verdict == "UNCERTAIN" else None))
+                            uncertain_reason="insufficient_evidence" if verdict == "UNCERTAIN" else None))
     return checks
 
 

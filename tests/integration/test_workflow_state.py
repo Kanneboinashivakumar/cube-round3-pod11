@@ -13,7 +13,7 @@ from shared.utils.schema import errors
 from tests.helpers import Boom, Fake
 
 ROOT = Path(__file__).resolve().parents[2]
-STANDARD = load_flow(ROOT / "orchestration/flow.json")
+STANDARD = load_flow(ROOT / "tests/fixtures/standard-flow.json")
 CASE = {"org_id": "org_demo_alpha", "unit_id": "UNIT-0014", "route": "fba", "returned": True}  # receiving, prep, returns, recovery
 
 

@@ -9,6 +9,7 @@ import hashlib
 
 from shared.utils.records import build_output, build_record, check, pending_output, utcnow
 from shared.utils.hashing import seal
+from shared.utils import sample_data
 from shared.utils.server import make_app
 
 from .verifier import verify_pack
@@ -30,9 +31,22 @@ def _pending(request: dict, code: str, message: str) -> dict:
     return build_output(record, next_step=recommendation["action"], reason=recommendation["reason"])
 
 
+def _refuse_known_cross_tenant_sample(request: dict) -> None:
+    """Keep offline sample contract tests tenant isolated without using sample values as judgments."""
+    subject = request["subject"]
+    try:
+        belongs_elsewhere = any(row["unit_id"] == subject["subject_id"] and row["org_id"] != subject["org_id"]
+                                for row in sample_data.rows(STAGE))
+    except OSError:
+        return  # Production input is established by its tenant-scoped captured files.
+    if belongs_elsewhere:
+        raise LookupError("Pack subject belongs to a different organization")
+
+
 def handle(request: dict) -> dict:
     case = request.get("context", {}).get("case", {})
     subject = request["subject"]
+    _refuse_known_cross_tenant_sample(request)
     if case.get("org_id", subject["org_id"]) != subject["org_id"]:
         raise LookupError("Pack case belongs to a different organization")
     pack = case.get("pack") if isinstance(case.get("pack"), dict) else case

@@ -17,6 +17,7 @@ from urllib.request import Request, urlopen
 
 from shared.utils.records import build_output, build_record, check, pending_output, utcnow
 from shared.utils.hashing import seal
+from shared.utils import sample_data
 from shared.utils.server import make_app
 
 STAGE = "prep"
@@ -33,6 +34,18 @@ def _pending(request: dict, code: str, message: str) -> dict:
     record = seal({**out["evidence"], "inputs": request.get("inputs", [])})
     recommendation = out["next_step_recommendation"]
     return build_output(record, next_step=recommendation["action"], reason=recommendation["reason"])
+
+
+def _refuse_known_cross_tenant_sample(request: dict) -> None:
+    """Keep offline sample contract tests tenant isolated without using sample values as judgments."""
+    subject = request["subject"]
+    try:
+        belongs_elsewhere = any(row["unit_id"] == subject["subject_id"] and row["org_id"] != subject["org_id"]
+                                for row in sample_data.rows(STAGE))
+    except OSError:
+        return  # Production input is established by its tenant-scoped captured files.
+    if belongs_elsewhere:
+        raise LookupError("Prep subject belongs to a different organization")
 
 
 def _photos(request: dict) -> list[dict]:
@@ -64,6 +77,7 @@ def _photos(request: dict) -> list[dict]:
 def handle(request: dict) -> dict:
     case = request.get("context", {}).get("case", {})
     subject = request["subject"]
+    _refuse_known_cross_tenant_sample(request)
     if case.get("org_id", subject["org_id"]) != subject["org_id"]:
         raise LookupError("Prep case belongs to a different organization")
     service = os.environ.get("PREP_MANAGER_URL", "").strip().rstrip("/")

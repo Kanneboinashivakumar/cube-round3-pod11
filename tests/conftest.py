@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from orchestration.orchestrator import flow_stages
+from orchestration.orchestrator import flow_stages, load_flow
 
 ROOT = Path(__file__).resolve().parents[1]
-AGENTS = flow_stages()  # the stages in this Pod's flow (pod.json)
+AGENTS = flow_stages(load_flow(ROOT / "orchestration/projects/cube/flow.json"))
 
 
 @pytest.fixture(scope="session")
