@@ -1,10 +1,10 @@
 {
   "stage": "pack",
-  "agent_id": "pack-stub@0",
-  "owner": "@github-handle-of-the-owner",
+  "agent_id": "packguard-pack@1",
+  "owner": "@Kanneboinashivakumar",
   "mode": "inproc",
   "url": "http://localhost:8103",
   "module": "agents.pack.app",
-  "implementation": "organiser-stub",
-  "notes": "Set mode to \"http\" if your agent is not Python or runs as its own service. Change implementation to a short honest description of what you built."
+  "implementation": "Deterministic PackGuard comparison of explicit expected and operator-observed SKU quantities; does not claim to analyze photos.",
+  "notes": "Provide context.case.pack.order_lines and context.case.pack.observed_in_box as SKU:quantity pairs separated by semicolons. Missing or malformed observations remain UNCERTAIN."
 }

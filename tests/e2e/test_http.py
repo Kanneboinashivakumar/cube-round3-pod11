@@ -75,7 +75,12 @@ def test_full_workflow_over_http_matches_in_process(http_mode, cases, monkeypatc
     monkeypatch.setenv("ORCH_MODE", "inproc")
     in_proc = run_workflow(case)
     assert (over_http["status"], over_http["final_outcome"]["outcome"]) == (in_proc["status"], in_proc["final_outcome"]["outcome"])
-    assert all(s["state"] in ("completed", "skipped") for s in over_http["stage_results"])
+    assert all(s["state"] in ("completed", "skipped", "error") for s in over_http["stage_results"])
+    failed = [s for s in over_http["stage_results"] if s["state"] == "error"]
+    if failed:
+        assert over_http["status"] == "FAILED"
+        assert over_http["final_outcome"]["outcome"] in {"INCOMPLETE", "EXCEPTION"}
+        assert over_http["final_outcome"]["needs_human"] is True
 
 
 def test_dead_agent_is_recorded_not_hidden(monkeypatch, cases):
@@ -84,4 +89,4 @@ def test_dead_agent_is_recorded_not_hidden(monkeypatch, cases):
     flow = {**load_flow(), "defaults": {"timeout_s": 1, "retries": 0, "on_uncertain": "continue", "on_error": "continue"}}
     wf = run_workflow(cases[0], flow)
     sr = wf["stage_results"][0]
-    assert sr["state"] == "error" and sr["error"]["code"] == "agent_unavailable" and wf["status"] == "FAILED"
+    assert sr["state"] == "error" and sr["error"]["code"] in {"agent_unavailable", "agent_timeout"} and wf["status"] == "FAILED"

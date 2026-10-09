@@ -70,7 +70,15 @@ def test_recovery_honours_overrides_of_previous_evidence(cases):
     case = next(c for c in cases if c["unit_id"] == "UNIT-0014")
     prior = []
     for stage in ("receiving", "prep", "returns"):
-        prior.append(client_for(stage).run(make_input(stage, case, prior), 30)["evidence"])
+        request = make_input(stage, case, prior)
+        if stage == "prep":
+            # This test is about Recovery's override handling. Use explicit PASS
+            # evidence so it does not depend on the optional live Prep service.
+            from tests.helpers import Fake
+            out = Fake("PASS").run(request, 30)
+        else:
+            out = client_for(stage).run(request, 30)
+        prior.append(out["evidence"])
     prep_id = prior[1]["record_id"]
     base = client_for("recovery").run(make_input("recovery", case, prior), 30)["evidence"]
     override = {"override_id": "OVR-001", "supersedes": {"record_id": prep_id, "override_id": None}, "target": "decision",

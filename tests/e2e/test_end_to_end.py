@@ -1,6 +1,7 @@
 """End to end: whole workflows, from case to final outcome, persisted and reloaded."""
 import collections
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -40,6 +41,8 @@ def test_audit_trail_explains_every_stage(cases):
 def test_claim_names_amount_and_cites_evidence(cases):
     if "prep" not in flow_stages():
         pytest.skip("Specialist flow has no Prep evidence, so the sample contains no claimable charge")
+    if not os.environ.get("PREP_MANAGER_URL"):
+        pytest.skip("A live Prep Manager is required to exercise claims that depend on Prep evidence")
     store = MemoryStore()
     for case in cases:
         wf = run_workflow(case, store=store)
