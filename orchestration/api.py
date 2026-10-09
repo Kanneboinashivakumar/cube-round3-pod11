@@ -290,6 +290,9 @@ def receive_event(body: dict) -> dict:
     receiving_input = body.get("receiving") or {}
     if not isinstance(receiving_input, dict):
         raise HTTPException(422, "receiving must be an object")
+    prep_input, pack_input = body.get("prep") or {}, body.get("pack") or {}
+    if not isinstance(prep_input, dict) or not isinstance(pack_input, dict):
+        raise HTTPException(422, "prep and pack must be objects")
     if event_type in {"UNIT_CREATED", "PRODUCT_RECEIVED", "FULFILMENT_ROUTE_IDENTIFIED"} and body.get("route", "unknown") not in {"fba", "mfn", "unknown"}:
         raise HTTPException(422, "route must be fba, mfn, or unknown")
 
@@ -309,6 +312,8 @@ def receive_event(body: dict) -> dict:
     case = {"project_id": project_id, "org_id": org, "unit_id": subject, "route": body.get("route", "unknown"),
             "returned": False, "return_initiated": False, "has_charge": False,
             "product_received": event_type == "PRODUCT_RECEIVED", "receiving": receiving_input,
+            "prep": {key: value for key, value in prep_input.items() if key != "photos"},
+            "pack": {key: value for key, value in pack_input.items() if key != "photos"},
             "fee": body.get("fee", {}), "event_ids": [event_id]}
     workflow_id = workflow_id_for(case)
     wf = STORE.load_workflow(workflow_id)
@@ -326,6 +331,8 @@ def receive_event(body: dict) -> dict:
     if event_type == "PRODUCT_RECEIVED" and wf is None:
         case["receiving"] = {key: value for key, value in case["receiving"].items() if key != "photos"}
         _save_receiving_photos(receiving_input.get("photos", []) or [], org, subject)
+        _save_stage_photos(prep_input.get("photos", []) or [], org, subject, "prep")
+        _save_stage_photos(pack_input.get("photos", []) or [], org, subject, "pack")
         created = run_workflow(case, flow, STORE)
         _append_event(created, event_type, "receiving", event_id)
         STORE.save_workflow(created)
@@ -334,21 +341,25 @@ def receive_event(body: dict) -> dict:
         raise HTTPException(404, f"unit passport {workflow_id} not found; send PRODUCT_RECEIVED first")
     if event_id in wf.get("context", {}).get("event_ids", []):
         should_resume = _has_product_received(wf) and wf["status"] in {"PENDING", "IN_PROGRESS", "FAILED"}
-        return run_workflow({"org_id": org, "unit_id": subject}, flow, STORE) if should_resume else wf
+        return run_workflow({"project_id": project_id, "org_id": org, "unit_id": subject}, flow, STORE) if should_resume else wf
     if event_type == "PRODUCT_RECEIVED":
         if _has_product_received(wf):
             raise HTTPException(409, "a product-received event already exists for this passport")
         route = body.get("route", "unknown")
         if route == "unknown":
             route = wf["context"].get("route", "unknown")
+        prior_prep, prior_pack = wf["context"].get("prep", {}), wf["context"].get("pack", {})
         wf["context"].update({"product_received": True, "receiving": {key: value for key, value in receiving_input.items() if key != "photos"},
-                              "route": route})
+                              "prep": {**prior_prep, **{key: value for key, value in prep_input.items() if key != "photos"}},
+                              "pack": {**prior_pack, **{key: value for key, value in pack_input.items() if key != "photos"}}, "route": route})
         _save_receiving_photos(receiving_input.get("photos", []) or [], org, subject)
+        _save_stage_photos(prep_input.get("photos", []) or [], org, subject, "prep")
+        _save_stage_photos(pack_input.get("photos", []) or [], org, subject, "pack")
         _apply_route(wf, route)
         wf["context"].setdefault("event_ids", []).append(event_id)
         _append_event(wf, event_type, "receiving", event_id)
         STORE.save_workflow(wf)
-        return run_workflow({"org_id": org, "unit_id": subject}, flow, STORE)
+        return run_workflow({"project_id": project_id, "org_id": org, "unit_id": subject}, flow, STORE)
 
     if event_type == "FULFILMENT_ROUTE_IDENTIFIED":
         route = body.get("route")
@@ -358,6 +369,12 @@ def receive_event(body: dict) -> dict:
                 sr["stage"] in {"prep", "pack"} and sr["runs"] > 0 for sr in wf["stage_results"]):
             raise HTTPException(409, "the fulfilment route cannot change after a route-specific agent has completed")
         wf["context"]["route"] = route
+        if prep_input:
+            wf["context"].setdefault("prep", {}).update({key: value for key, value in prep_input.items() if key != "photos"})
+            _save_stage_photos(prep_input.get("photos", []) or [], org, subject, "prep")
+        if pack_input:
+            wf["context"].setdefault("pack", {}).update({key: value for key, value in pack_input.items() if key != "photos"})
+            _save_stage_photos(pack_input.get("photos", []) or [], org, subject, "pack")
         _apply_route(wf, route)
         wf["context"].setdefault("event_ids", []).append(event_id)
         _append_event(wf, event_type, "prep" if route == "fba" else "pack", event_id)
@@ -393,7 +410,7 @@ def receive_event(body: dict) -> dict:
     STORE.save_workflow(wf)
     if not _has_product_received(wf) and event_type != "FULFILMENT_ROUTE_IDENTIFIED":
         return wf
-    return run_workflow({"org_id": org, "unit_id": subject}, flow, STORE)
+    return run_workflow({"project_id": project_id, "org_id": org, "unit_id": subject}, flow, STORE)
 
 
 def _has_product_received(wf: dict) -> bool:
@@ -423,28 +440,33 @@ def _apply_route(wf: dict, route: str) -> None:
 
 
 def _save_receiving_photos(photos: list, org_id: str, subject_id: str) -> None:
-    """Persist bounded, tenant-scoped image captures before the receiving agent runs."""
+    """Persist receipt images using the common tenant-scoped stage capture path."""
+    _save_stage_photos(photos, org_id, subject_id, "receiving")
+
+
+def _save_stage_photos(photos: list, org_id: str, subject_id: str, stage: str) -> None:
+    """Persist bounded images under data/input/<org>/<unit>/<stage>."""
     if not isinstance(photos, list) or len(photos) > 12:
-        raise HTTPException(422, "Attach at most 12 receiving images")
+        raise HTTPException(422, f"Attach at most 12 {stage} images")
     root = Path(os.environ.get("INPUT_DIR", Path(__file__).resolve().parents[1] / "data" / "input")).resolve()
     safe_org = re.sub(r"[^A-Za-z0-9._-]", "-", org_id)
     safe_subject = re.sub(r"[^A-Za-z0-9._-]", "-", subject_id)
-    folder = root / safe_org / safe_subject / "receiving"
+    folder = root / safe_org / safe_subject / stage
     folder.mkdir(parents=True, exist_ok=True)
     allowed = {"image/jpeg": (".jpg", b"\xff\xd8\xff"), "image/png": (".png", b"\x89PNG\r\n\x1a\n"),
                "image/webp": (".webp", b"RIFF")}
     for photo in photos:
         if not isinstance(photo, dict) or photo.get("mime_type") not in allowed or not isinstance(photo.get("data"), str):
-            raise HTTPException(422, "Only JPEG, PNG and WebP receiving photos are accepted")
+            raise HTTPException(422, "Only JPEG, PNG and WebP stage photos are accepted")
         try:
             raw = base64.b64decode(photo["data"], validate=True)
         except (ValueError, base64.binascii.Error) as exc:
-            raise HTTPException(422, "A receiving photo was not valid base64") from exc
+            raise HTTPException(422, "A stage photo was not valid base64") from exc
         if not raw or len(raw) > 8 * 1024 * 1024:
-            raise HTTPException(413, "Each receiving photo must be between 1 byte and 8 MB")
+            raise HTTPException(413, "Each stage photo must be between 1 byte and 8 MB")
         suffix, signature = allowed[photo["mime_type"]]
         if not raw.startswith(signature) or (suffix == ".webp" and raw[8:12] != b"WEBP"):
-            raise HTTPException(422, "A receiving photo does not match its declared image type")
+            raise HTTPException(422, "A stage photo does not match its declared image type")
         digest = hashlib.sha256(raw).hexdigest()
         (folder / f"{digest}{suffix}").write_bytes(raw)
 

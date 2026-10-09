@@ -1,52 +1,71 @@
-"""Pack Manager: agent entry point.
+"""Round 3 Pack Manager adapter for PackGuard's structured verifier.
 
-========================  REPLACE ME  ========================
-ORGANISER STUB replaying the Round 2 sample CSV.
-Member 3: bring your Round 2 Pack Manager here and make `handle()` call it.
-Only merchant-fulfilled / 3PL units reach Pack (route == "mfn"); Amazon packs FBA boxes.
-Run:  uvicorn agents.pack.app:app --port 8103
-===============================================================
+Expected and observed lines must come from explicit case/operator observations.
+Input images are cited as evidence but are never claimed to have been analyzed.
 """
-from shared.utils import sample_data
-from shared.utils.records import build_output, build_record, check
+from __future__ import annotations
+
+import hashlib
+
+from shared.utils.records import build_output, build_record, check, pending_output, utcnow
+from shared.utils.hashing import seal
 from shared.utils.server import make_app
-from shared.utils.stubs import STUB_MODEL, photos
+
+from .verifier import verify_pack
 
 STAGE = "pack"
-AGENT_ID = "pack-stub@0"
+AGENT_ID = "packguard-pack@1"
+MODEL = {"name": "deterministic-packguard", "version": "1", "calls": 0}
 
 
-def parse_lines(text: str) -> dict[str, int]:
-    out: dict[str, int] = {}
-    for part in filter(None, text.split(";")):
-        sku, _, qty = part.partition(":")
-        out[sku] = out.get(sku, 0) + int(qty or 1)
-    return out
+def _record_id(request: dict) -> str:
+    suffix = hashlib.sha256(request["request_id"].encode()).hexdigest()[:12].upper()
+    return f"PCK-{suffix}"
+
+
+def _pending(request: dict, code: str, message: str) -> dict:
+    out = pending_output(request, code=code, message=message, agent_id=AGENT_ID)
+    record = seal({**out["evidence"], "inputs": request.get("inputs", [])})
+    recommendation = out["next_step_recommendation"]
+    return build_output(record, next_step=recommendation["action"], reason=recommendation["reason"])
 
 
 def handle(request: dict) -> dict:
-    s = request["subject"]
-    r = sample_data.row("pack", s["subject_id"], s["org_id"])
-    refs = [p["ref"] for p in photos(r)]
-    want, got = parse_lines(r["order_lines"]), parse_lines(r["observed_in_box"])
-    missing = sorted(k for k in want if k not in got)
-    short = sorted(k for k in want if k in got and got[k] != want[k])
-    extra = sorted(k for k in got if k not in want)
-    checks = [
-        check("items_present", "FAIL" if missing else "PASS", None, expected=sorted(want), observed=sorted(got),
-              detail=f"missing: {missing}" if missing else "", evidence_refs=refs),
-        check("quantities_correct", "FAIL" if short else "PASS", None, expected=want,
-              observed={k: got[k] for k in want if k in got}, evidence_refs=refs),
-        check("no_extra_items", "FAIL" if extra else "PASS", None, expected=[], observed=extra, evidence_refs=refs),
-    ]
-    pack_out = "seal" if all(c["verdict"] == "PASS" for c in checks) else "stop_and_fix"
+    case = request.get("context", {}).get("case", {})
+    subject = request["subject"]
+    if case.get("org_id", subject["org_id"]) != subject["org_id"]:
+        raise LookupError("Pack case belongs to a different organization")
+    pack = case.get("pack") if isinstance(case.get("pack"), dict) else case
+    expected, observed = pack.get("order_lines"), pack.get("observed_in_box")
+    if not expected or not observed:
+        return _pending(request, "pack_observation_missing",
+                        "Provide order_lines and operator-observed observed_in_box before judging contents.")
+
+    result = verify_pack(expected, observed)
+    refs = [item["ref"] for item in request.get("inputs", [])]
+    checks = []
+    if result["checks"]:
+        expected_map, observed_map = result["expected"], result["observed"]
+        missing = sorted(sku for sku, qty in expected_map.items() if qty > 0 and observed_map.get(sku, 0) == 0)
+        extras = sorted(sku for sku, qty in observed_map.items() if qty > 0 and sku not in expected_map)
+        checks = [
+            check("items_present", "FAIL" if missing else "PASS", None,
+                  expected=sorted(expected_map), observed=sorted(observed_map),
+                  detail=f"Missing SKUs: {missing}" if missing else "Every expected SKU is present.", evidence_refs=refs),
+            check("quantities_correct", "FAIL" if result["verdict"] == "FAIL" else "PASS", None,
+                  expected=expected_map, observed=observed_map, detail=result["reason"], evidence_refs=refs),
+            check("no_extra_items", "FAIL" if extras else "PASS", None,
+                  expected=[], observed=extras, detail=f"Unexpected SKUs: {extras}" if extras else "No extra SKUs.", evidence_refs=refs),
+        ]
+    verdict = result["verdict"]
     record = build_record(
-        request, agent_id=AGENT_ID, record_id=r["record_id"], captured_at=r["captured_at"], operator_id=r["operator_id"],
-        unit_scope="order", refs={"order_id": r["order_id"]}, checks=checks, outcome=pack_out, model=STUB_MODEL,
-        inputs=photos(r), reason=f"stub replay of sample row; agent says {pack_out}",
-        payload={"channel": r["channel"], "operator_verdict": r["operator_verdict"],
-                 "agent_agrees_with_operator": r["operator_verdict"] == pack_out},
-    )
+        request, agent_id=AGENT_ID, record_id=_record_id(request), captured_at=case.get("captured_at") or utcnow(),
+        checks=checks, verdict=verdict,
+        outcome={"PASS": "seal", "FAIL": "stop_and_fix", "UNCERTAIN": "pending_review"}[verdict],
+        reason=result["reason"], model=MODEL, unit_scope="order", refs={"order_id": pack.get("order_id")},
+        inputs=request.get("inputs", []), needs_human=verdict == "UNCERTAIN",
+        payload={"action": result["action"], "expected": result["expected"], "observed": result["observed"],
+                 "observation_source": "operator_supplied_structured_observation", "photo_analysis_performed": False})
     return build_output(record)
 
 

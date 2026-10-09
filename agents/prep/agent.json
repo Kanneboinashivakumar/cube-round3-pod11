@@ -1,10 +1,10 @@
 {
   "stage": "prep",
-  "agent_id": "prep-stub@0",
-  "owner": "@github-handle-of-the-owner",
+  "agent_id": "prep-manager-adapter@1",
+  "owner": "@Kanneboinashivakumar",
   "mode": "inproc",
   "url": "http://localhost:8102",
   "module": "agents.prep.app",
-  "implementation": "organiser-stub",
-  "notes": "Set mode to \"http\" if your agent is not Python or runs as its own service. Change implementation to a short honest description of what you built."
+  "implementation": "Round 3 contract adapter for the Prep Manager Next.js /api/inspect service; maps rule-based inspection evidence and records pending when unavailable.",
+  "notes": "Set PREP_MANAGER_URL to the running Prep Manager base URL. Inspection requires context.case.prep.product and tenant-scoped images in data/input/<org>/<unit>/prep/."
 }

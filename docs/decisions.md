@@ -78,6 +78,14 @@ A contradiction between documents or data is a **finding**, not a failure. Open 
 
 _Add entries below._
 
+### D-009 · Compose Round 2 Prep and Pack through the Cube lifecycle flow
+- Date / Owner: 2026-10-09 / @Kanneboinashivakumar
+- Context: the Round 2 managers use different runtimes and evidence shapes; running both for every unit would assert checks that do not apply.
+- Options considered: replace the Pod's default receiving flow; adapt both managers behind the existing contract and add a separate project flow; run all five stages unconditionally.
+- Decision: preserve the default receiving flow. Add `project_id: "cube"` as an opt-in lifecycle flow: Receiving, FBA-only Prep, MFN-only Pack, Returns only after physical receipt, and Recovery only after a charge. Pack uses deterministic structured observations. Prep calls the existing Prep Manager `/api/inspect` service through `PREP_MANAGER_URL` and records pending UNCERTAIN when unavailable.
+- Why: keeps existing receiving consumers working, honors route/event timing, and keeps each manager behind the organiser-owned evidence envelope.
+- Consequences: shared orchestration flow needs Pod review before merge. The Prep Manager remains a separate runtime and must be configured; this PR does not vendor its Next.js app or make the project self-contained. No visual pack inspection or weight/dimension measurement is claimed.
+
 ### D-007 · Events advance a unit passport over time
 - Date / Owner: 2026-10-08 / @chapalaumesh209
 - Context: the supplied CUBE FLOW idea specifies that receiving, routing, physical return, and fee arrival happen at different times; running every eligible stage at receipt would invent future events.
